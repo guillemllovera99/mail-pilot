@@ -45,6 +45,7 @@ export async function runAiExtraction(userId?: string): Promise<ExtractionSummar
         data: {
           suggestedTitle: result.title,
           suggestedPriority: result.priority,
+          suggestedCategory: result.category,
           suggestedDueDate: dueDateParsed,
           suggestedTags: result.tags,
           suggestedAmount: result.amount,

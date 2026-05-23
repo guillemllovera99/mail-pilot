@@ -9,6 +9,7 @@ export interface TaskItem {
   title: string
   description: string | null
   priority: "URGENT" | "HIGH" | "MEDIUM" | "LOW"
+  category: string
   dueDate: string | null
   tags: string[]
   amount: string | null
@@ -16,6 +17,22 @@ export interface TaskItem {
   emailFrom: string | null
   emailSubject: string | null
   createdAt: string
+}
+
+const CATEGORY_COLOURS: Record<string, string> = {
+  FINANCE: "text-green-400 border-green-800",
+  LEGAL: "text-purple-400 border-purple-800",
+  BOARD: "text-blue-400 border-blue-800",
+  HR: "text-pink-400 border-pink-800",
+  INVESTORS: "text-yellow-400 border-yellow-800",
+  OPERATIONS: "text-orange-400 border-orange-800",
+  PERSONAL: "text-gray-400 border-gray-700",
+  OTHER: "text-gray-500 border-gray-700",
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  FINANCE: "Finance", LEGAL: "Legal", BOARD: "Board", HR: "HR",
+  INVESTORS: "Investors", OPERATIONS: "Ops", PERSONAL: "Personal", OTHER: "Other",
 }
 
 const PRIORITY_STYLES: Record<string, string> = {
@@ -63,13 +80,20 @@ export function TaskCard({ task }: { task: TaskItem }) {
 
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-3 group">
-      {/* Priority + due date row */}
+      {/* Priority + category + due date row */}
       <div className="flex items-start justify-between gap-3">
-        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${PRIORITY_STYLES[task.priority]}`}>
-          {task.priority}
-        </span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${PRIORITY_STYLES[task.priority]}`}>
+            {task.priority}
+          </span>
+          {task.category && task.category !== "OTHER" && (
+            <span className={`text-xs border px-2 py-0.5 rounded-full flex-shrink-0 ${CATEGORY_COLOURS[task.category] ?? CATEGORY_COLOURS.OTHER}`}>
+              {CATEGORY_LABELS[task.category] ?? task.category}
+            </span>
+          )}
+        </div>
         {dueLabel && (
-          <span className={`text-xs flex items-center gap-1 ${dueColour}`}>
+          <span className={`text-xs flex items-center gap-1 flex-shrink-0 ${dueColour}`}>
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>

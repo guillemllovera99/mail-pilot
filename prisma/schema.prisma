@@ -95,6 +95,8 @@ model Task {
   assigneeEmail  String?
   amount         String?
   tags           String[]
+  category       String      @default("OTHER")
+  emailBody      String?     @db.Text
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -125,6 +127,7 @@ model EmailSuggestion {
   suggestedTags        String[]
   suggestedAmount      String?
   suggestedAssignee    String?
+  suggestedCategory    String           @default("OTHER")
   confidence           Float            @default(0)
   status               SuggestionStatus @default(PENDING)
   createdAt            DateTime         @default(now())

@@ -5,12 +5,15 @@ export interface ExtractionResult {
   isActionable: boolean
   title: string
   priority: "URGENT" | "HIGH" | "MEDIUM" | "LOW"
-  dueDateIso: string | null   // ISO 8601 or null
+  category: "FINANCE" | "LEGAL" | "BOARD" | "HR" | "INVESTORS" | "OPERATIONS" | "PERSONAL" | "OTHER"
+  dueDateIso: string | null
   tags: string[]
   amount: string | null
   assignee: string | null
-  confidence: number          // 0.0 – 1.0
+  confidence: number
 }
+
+const VALID_CATEGORIES = ["FINANCE", "LEGAL", "BOARD", "HR", "INVESTORS", "OPERATIONS", "PERSONAL", "OTHER"]
 
 function buildPrompt(subject: string, from: string, bodyPreview: string): string {
   const today = new Date().toISOString().split("T")[0]
@@ -28,6 +31,7 @@ Extract any action item this CFO must act on. Return JSON:
   "isActionable": <true if the CFO needs to do something, false for newsletters/notifications/FYI>,
   "title": "<concise imperative task title, max 80 chars, e.g. 'Review Q3 invoice from Acme'>",
   "priority": "<URGENT|HIGH|MEDIUM|LOW based on urgency/financial impact>",
+  "category": "<one of: FINANCE|LEGAL|BOARD|HR|INVESTORS|OPERATIONS|PERSONAL|OTHER>",
   "dueDateIso": "<ISO 8601 date string if a deadline is mentioned, otherwise null>",
   "tags": ["<relevant tag>", ...],
   "amount": "<monetary amount if mentioned, e.g. '$12,500', otherwise null>",
@@ -40,6 +44,16 @@ Priority guidelines:
 - HIGH: payments >$10k, contracts, approvals needed this week
 - MEDIUM: routine approvals, invoices <$10k, meetings
 - LOW: FYI items, newsletters, automated notifications
+
+Category guidelines:
+- FINANCE: invoices, payments, budgets, accounting, audits, tax
+- LEGAL: contracts, NDAs, compliance, legal notices, disputes
+- BOARD: board meetings, board reports, directors, governance
+- HR: hiring, employees, salaries, performance, people matters
+- INVESTORS: investor relations, fundraising, shareholders, VC
+- OPERATIONS: logistics, vendors, IT, facilities, processes
+- PERSONAL: personal items unrelated to company business
+- OTHER: anything that doesn't fit the above
 
 If not actionable, still return valid JSON with isActionable=false and confidence<=0.15.`
 }
@@ -91,6 +105,9 @@ export async function extractActionItem(
     priority: (["URGENT", "HIGH", "MEDIUM", "LOW"].includes(parsed.priority)
       ? parsed.priority
       : "MEDIUM") as ExtractionResult["priority"],
+    category: (VALID_CATEGORIES.includes(parsed.category)
+      ? parsed.category
+      : "OTHER") as ExtractionResult["category"],
     dueDateIso: parsed.dueDateIso ?? null,
     tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 6) : [],
     amount: parsed.amount ?? null,

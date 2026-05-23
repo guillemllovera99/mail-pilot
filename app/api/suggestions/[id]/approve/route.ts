@@ -33,6 +33,7 @@ export async function POST(
       title: suggestion.suggestedTitle,
       description: suggestion.suggestedDescription,
       priority: suggestion.suggestedPriority,
+      category: suggestion.suggestedCategory,
       dueDate: suggestion.suggestedDueDate,
       tags: suggestion.suggestedTags,
       amount: suggestion.suggestedAmount,
