@@ -50,7 +50,7 @@ export function SyncButton({ onDone, compact }: { onDone?: () => void; compact?:
             }
           </svg>
         )}
-        {state === "syncing" ? "Syncing…" : state === "done" ? "Synced" : "Sync inbox"}
+        {state === "loading" ? "Syncing…" : state === "done" ? "Synced" : "Sync inbox"}
       </button>
     )
   }
