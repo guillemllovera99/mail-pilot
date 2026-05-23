@@ -2,15 +2,15 @@
   "crons": [
     {
       "path": "/api/cron/email-sync",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 8 * * *"
     },
     {
       "path": "/api/cron/ai-extract",
-      "schedule": "*/30 * * * *"
+      "schedule": "30 8 * * *"
     },
     {
       "path": "/api/cron/reminders",
-      "schedule": "0 * * * *"
+      "schedule": "0 9 * * *"
     }
   ]
 }
