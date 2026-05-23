@@ -11,6 +11,14 @@
     {
       "path": "/api/cron/reminders",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/escalate",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/digest",
+      "schedule": "0 7 * * 1"
     }
   ]
 }
