@@ -41,6 +41,7 @@ export async function POST(
       emailId: suggestion.emailId,
       emailFrom: suggestion.emailFrom,
       emailSubject: suggestion.emailSubject,
+      emailBody: suggestion.suggestedDescription,
       status: "OPEN",
     },
   })

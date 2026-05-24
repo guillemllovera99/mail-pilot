@@ -20,7 +20,7 @@ export async function PATCH(
   }
 
   const body = await req.json()
-  const { title, description, priority, dueDate, status } = body
+  const { title, description, priority, dueDate, status, recurrenceRule, attachmentUrls } = body
 
   const updated = await prisma.task.update({
     where: { id: params.id },
@@ -35,6 +35,8 @@ export async function PATCH(
         status,
         completedAt: status === "DONE" ? new Date() : status === "OPEN" ? null : undefined,
       }),
+      ...(recurrenceRule !== undefined && { recurrenceRule }),
+      ...(attachmentUrls !== undefined && { attachmentUrls }),
     },
   })
 
