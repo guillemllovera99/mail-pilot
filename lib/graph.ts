@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db"
 
-const TOKEN_URL = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token"
+const MS_TOKEN_URL = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token"
+const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0"
 
 // ─── Token refresh ────────────────────────────────────────────────────────────
@@ -13,66 +14,79 @@ interface TokenResponse {
   token_type: string
 }
 
-async function refreshAccessToken(userId: string): Promise<string | null> {
-  const account = await prisma.account.findFirst({
-    where: { userId, provider: "azure-ad" },
-  })
-  if (!account?.refresh_token) return null
-
+async function refreshMicrosoftToken(accountId: string, refreshToken: string): Promise<string | null> {
   const params = new URLSearchParams({
     client_id: process.env.AZURE_CLIENT_ID!,
     client_secret: process.env.AZURE_CLIENT_SECRET!,
     grant_type: "refresh_token",
-    refresh_token: account.refresh_token,
-    scope: "openid profile email offline_access Mail.Read Calendars.ReadWrite User.Read",
+    refresh_token: refreshToken,
+    scope: "openid profile email offline_access Mail.Read Mail.Send Calendars.ReadWrite User.Read",
   })
-
-  const res = await fetch(TOKEN_URL, {
+  const res = await fetch(MS_TOKEN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: params.toString(),
   })
-
-  if (!res.ok) {
-    console.error("[graph] Token refresh failed:", await res.text())
-    return null
-  }
-
+  if (!res.ok) { console.error("[graph] MS token refresh failed:", await res.text()); return null }
   const data: TokenResponse = await res.json()
-  const expiresAt = Math.floor(Date.now() / 1000) + data.expires_in
-
-  // Persist the new tokens
   await prisma.account.update({
-    where: { id: account.id },
+    where: { id: accountId },
     data: {
       access_token: data.access_token,
       refresh_token: data.refresh_token,
-      expires_at: expiresAt,
-      ext_expires_in: data.ext_expires_in,
+      expires_at: Math.floor(Date.now() / 1000) + data.expires_in,
     },
   })
-
   return data.access_token
 }
 
-// ─── Token getter ─────────────────────────────────────────────────────────────
+async function refreshGoogleToken(accountId: string, refreshToken: string): Promise<string | null> {
+  const params = new URLSearchParams({
+    client_id: process.env.GOOGLE_CLIENT_ID!,
+    client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+    grant_type: "refresh_token",
+    refresh_token: refreshToken,
+  })
+  const res = await fetch(GOOGLE_TOKEN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params.toString(),
+  })
+  if (!res.ok) { console.error("[graph] Google token refresh failed:", await res.text()); return null }
+  const data = await res.json()
+  await prisma.account.update({
+    where: { id: accountId },
+    data: {
+      access_token: data.access_token,
+      expires_at: Math.floor(Date.now() / 1000) + (data.expires_in ?? 3600),
+    },
+  })
+  return data.access_token
+}
 
-export async function getAccessToken(userId: string): Promise<string | null> {
+// ─── Token getter (works for both providers) ──────────────────────────────────
+
+export async function getAccessToken(userId: string, provider?: "azure-ad" | "google"): Promise<string | null> {
   const account = await prisma.account.findFirst({
-    where: { userId, provider: "azure-ad" },
+    where: { userId, ...(provider ? { provider } : {}) },
+    orderBy: { provider: "asc" }, // deterministic
   })
   if (!account) return null
 
-  // Check if current token is still valid (with 60s buffer)
   const nowSec = Math.floor(Date.now() / 1000)
   const isValid = account.expires_at && account.expires_at > nowSec + 60
+  if (isValid && account.access_token) return account.access_token
 
-  if (isValid && account.access_token) {
-    return account.access_token
-  }
+  if (!account.refresh_token) return null
+  if (account.provider === "google") return refreshGoogleToken(account.id, account.refresh_token)
+  return refreshMicrosoftToken(account.id, account.refresh_token)
+}
 
-  // Refresh
-  return refreshAccessToken(userId)
+export async function getUserProvider(userId: string): Promise<"azure-ad" | "google" | null> {
+  const account = await prisma.account.findFirst({ where: { userId }, select: { provider: true } })
+  if (!account) return null
+  if (account.provider === "google") return "google"
+  return "azure-ad"
 }
 
 // ─── Graph API fetch ──────────────────────────────────────────────────────────

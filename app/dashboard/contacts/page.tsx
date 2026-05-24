@@ -160,15 +160,20 @@ export default async function ContactsPage() {
             return (
               <div key={contact.email} className="px-5 py-4">
                 <div className="flex items-start gap-4">
-                  {/* Avatar */}
-                  <div className="w-9 h-9 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center flex-shrink-0">
+                  {/* Avatar — links to timeline */}
+                  <Link
+                    href={`/dashboard/contacts/${encodeURIComponent(contact.email)}`}
+                    className="w-9 h-9 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center flex-shrink-0 hover:border-gray-500 transition-colors"
+                  >
                     <span className="text-xs font-bold text-gray-400">{initials(contact.email)}</span>
-                  </div>
+                  </Link>
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-medium text-white truncate">{contact.email}</p>
+                      <Link href={`/dashboard/contacts/${encodeURIComponent(contact.email)}`} className="text-sm font-medium text-white hover:text-blue-400 transition-colors truncate">
+                        {contact.email}
+                      </Link>
                       <span className="text-xs text-gray-600 flex-shrink-0">{formatDate(contact.lastActivity)}</span>
                     </div>
 
